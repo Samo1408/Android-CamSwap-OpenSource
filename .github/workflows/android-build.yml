@@ -19,21 +19,18 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          cmdline-tools-version: 12266719
-          accept-android-sdk-licenses: true
-
-      - name: Install NDK & CMake
+      - name: Install SDK, NDK & CMake
         run: |
-          echo "y" | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install 'ndk;25.1.8937393' 'cmake;3.22.1'
-          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/25.1.8937393" >> $GITHUB_ENV
+          export ANDROID_SDK_ROOT=/usr/local/lib/android/sdk
+          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --install 'platforms;android-36' 'build-tools;36.0.0' 'ndk;25.1.8937393' 'cmake;3.22.1'
+          echo "ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/25.1.8937393" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT}" >> $GITHUB_ENV
 
       - name: Build APK
         run: |
+          chmod +x gradlew
           ./gradlew assembleRelease
-          echo "## Cloud Build Engine — Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "## Build Complete" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
