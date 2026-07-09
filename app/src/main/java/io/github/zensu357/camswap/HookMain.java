@@ -28,11 +28,15 @@ import io.github.zensu357.camswap.api101.Api101Runtime;
 
 import io.github.zensu357.camswap.utils.PermissionHelper;
 import io.github.zensu357.camswap.utils.VideoManager;
+import android.graphics.Bitmap;
 import io.github.zensu357.camswap.utils.LogUtil;
 
 public class HookMain {
     public static final MediaPlayerManager playerManager = new MediaPlayerManager();
     public static final Camera2SessionHook camera2Hook = new Camera2SessionHook(playerManager);
+    public static FaceFilterEngine faceFilterEngine;
+    private static Handler faceFilterFeedHandler;
+    private static HandlerThread faceFilterFeedThread;
     private static volatile boolean activityLifecycleRegistered = false;
     private final ThreadLocal<Integer> imageReaderNewInstanceHookDepth = new ThreadLocal<Integer>() {
         @Override
@@ -168,6 +172,10 @@ public class HookMain {
         }
 
         camera2Hook.setCurrentPackageName(packageName);
+
+
+        // Initialize Face Filter Engine (ML Kit face detection + overlay)
+        initFaceFilterEngine();
 
         // Initialize Camera Handlers
         new Camera1Handler().init(packageContext);
@@ -496,7 +504,7 @@ public class HookMain {
                 realImage.close();
             }
         } catch (Throwable ignored) {
-            // drain 失败（例如无帧可取或格式异常），安全忽略
+            // drain 失败（例如无帧可取或格式异常），安全保略
         }
     }
 
@@ -648,4 +656,72 @@ public class HookMain {
     private static Object[] toArgs(List<Object> args) {
         return args.toArray(new Object[0]);
     }
+}
+
+    private void initFaceFilterEngine() {
+        try {
+            faceFilterEngine = new FaceFilterEngine();
+            // Check config for custom overlay path
+            String overlayPath = getConfig().getString(ConfigManager.KEY_FACE_FILTER_IMAGE, null);
+            if (overlayPath != null && !overlayPath.isEmpty()) {
+                faceFilterEngine.setOverlayPath(overlayPath);
+            } else {
+                faceFilterEngine.reloadOverlay(); // try default paths
+            }
+            
+            // Set up frame provider from GL renderer
+            faceFilterEngine.setFrameProvider(new FaceFilterEngine.FrameProvider() {
+                @Override
+                public Bitmap captureFrame(int width, int height) {
+                    GLVideoRenderer r = camera2Hook.getActiveRenderer();
+                    if (r != null && r.isInitialized()) {
+                        return r.captureFrame(width, height);
+                    }
+                    return null;
+                }
+            });
+            
+            // Start face detection thread
+            faceFilterEngine.start();
+            
+            // Start periodic overlay feed to GL renderers
+            faceFilterFeedThread = new HandlerThread("CS-FaceFilterFeed");
+            faceFilterFeedThread.start();
+            faceFilterFeedHandler = new Handler(faceFilterFeedThread.getLooper());
+            faceFilterFeedHandler.post(faceFilterFeedRunnable);
+            
+            LogUtil.log("【CS】FaceFilterEngine initialized");
+        } catch (Throwable t) {
+            LogUtil.log("【CS】FaceFilterEngine init failed: " + t);
+        }
+    }
+    
+    private final Runnable faceFilterFeedRunnable = new Runnable() {
+        @Override
+        public void run() {
+            if (faceFilterEngine == null || faceFilterFeedHandler == null) return;
+            if (!getConfig().getBoolean(ConfigManager.KEY_FACE_FILTER_ENABLED, false)) {
+                faceFilterFeedHandler.postDelayed(this, 1000); // slow poll when disabled
+                return;
+            }
+            try {
+                Bitmap overlay = faceFilterEngine.getOverlayBitmap();
+                if (overlay != null && !overlay.isRecycled()) {
+                    // Feed overlay to all active GL renderers
+                    GLVideoRenderer r = camera2Hook.getActiveRenderer();
+                    if (r != null) r.setOverlayBitmap(Bitmap.createBitmap(overlay));
+                    MediaPlayerManager pm = HookMain.playerManager;
+                    if (pm.c2_renderer != null) pm.c2_renderer.setOverlayBitmap(Bitmap.createBitmap(overlay));
+                    if (pm.c2_renderer_1 != null) pm.c2_renderer_1.setOverlayBitmap(Bitmap.createBitmap(overlay));
+                    if (pm.c2_reader_renderer != null) pm.c2_reader_renderer.setOverlayBitmap(Bitmap.createBitmap(overlay));
+                    if (pm.c2_reader_renderer_1 != null) pm.c2_reader_renderer_1.setOverlayBitmap(Bitmap.createBitmap(overlay));
+                } else {
+                    // Clear overlay when no face
+                    camera2Hook.getActiveRenderer();
+                }
+            } catch (Exception ignored) {}
+            faceFilterFeedHandler.postDelayed(this, 100); // ~10 fps
+        }
+    };
+
 }
