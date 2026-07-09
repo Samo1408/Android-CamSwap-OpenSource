@@ -29,6 +29,8 @@ import io.github.zensu357.camswap.api101.Api101Runtime;
 import io.github.zensu357.camswap.utils.PermissionHelper;
 import io.github.zensu357.camswap.utils.VideoManager;
 import android.graphics.Bitmap;
+import android.os.Handler;
+import android.os.HandlerThread;
 import io.github.zensu357.camswap.utils.LogUtil;
 
 public class HookMain {
@@ -656,7 +658,6 @@ public class HookMain {
     private static Object[] toArgs(List<Object> args) {
         return args.toArray(new Object[0]);
     }
-}
 
     private void initFaceFilterEngine() {
         try {
