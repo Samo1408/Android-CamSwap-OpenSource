@@ -149,6 +149,10 @@ dependencies {
     implementation "androidx.media3:media3-exoplayer-hls:1.6.0"
     implementation "androidx.media3:media3-exoplayer-dash:1.6.0"
     implementation "androidx.media3:media3-datasource:1.6.0"
+    // ML Kit Face Detection
+    implementation "com.google.mlkit:face-detection:16.1.7"
+    implementation "com.google.android.gms:play-services-mlkit-face-detection:17.1.0"
+
     // RTMP: media3-exoplayer-rtmp requires native libs and may not be available
     // on all mirrors. RTMP is handled via reflection in ExoPlayerBackend with
     // graceful fallback to ProgressiveMediaSource.
