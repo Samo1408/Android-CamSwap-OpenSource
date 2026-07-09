@@ -22,21 +22,20 @@ jobs:
       - name: Set up Android SDK
         uses: android-actions/setup-android@v3
         with:
-          ndk-version: '25.1.8937393'
-          cmake-version: '3.22.1'
+          cmdline-tools-version: 12266719
+          accept-android-sdk-licenses: true
+
+      - name: Install NDK & CMAKE
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install 'ndk;25.1.8937393' 'cmake;3.22.1'
+          echo "NDK_DIR=$ANDROID_HOME/ndk/25.1.8937393" >> $GITHUB_ENV
 
       - name: Build APK
         run: |
-          cd $GITHUB_WORKSPACE
-          echo "APP_NAME=CamSwapOS FaceFilter" >> $GITHUB_ENV
-          echo "PACKAGE_NAME=io.github.zensu357.camswap" >> $GITHUB_ENV
-          echo "FLUTTER_VER=3.29.1" >> $GITHUB_ENV
-          echo "BUILD_MODE=release" >> $GITHUB_ENV
-          echo "SIGNING_SOURCE=CBE default (cbe_release_key)" >> $GITHUB_ENV
           ./gradlew assembleRelease
           echo "## Cloud Build Engine — Build Summary" >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload APK
+      - name: Upload APK        
         uses: actions/upload-artifact@v4
         with:
           name: CamSwapOS-FaceFilter
