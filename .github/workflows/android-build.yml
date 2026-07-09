@@ -25,17 +25,17 @@ jobs:
           cmdline-tools-version: 12266719
           accept-android-sdk-licenses: true
 
-      - name: Install NDK & CMAKE
+      - name: Install NDK & CMake
         run: |
-          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install 'ndk;25.1.8937393' 'cmake;3.22.1'
-          echo "NDK_DIR=$ANDROID_HOME/ndk/25.1.8937393" >> $GITHUB_ENV
+          echo "y" | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install 'ndk;25.1.8937393' 'cmake;3.22.1'
+          echo "ANDROID_NDK_HOME=${ANDROID_HOME}/ndk/25.1.8937393" >> $GITHUB_ENV
 
       - name: Build APK
         run: |
           ./gradlew assembleRelease
           echo "## Cloud Build Engine — Build Summary" >> $GITHUB_STEP_SUMMARY
 
-      - name: Upload APK        
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: CamSwapOS-FaceFilter
