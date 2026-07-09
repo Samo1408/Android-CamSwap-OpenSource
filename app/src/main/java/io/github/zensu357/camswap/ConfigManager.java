@@ -54,6 +54,8 @@ public class ConfigManager {
     public static final String KEY_VIDEO_ROTATION_OFFSET = "video_rotation_offset"; // 视频旋转偏移角度
     public static final String KEY_ENABLE_PHOTO_FAKE = "enable_photo_fake"; // 启用拍照替换 (动态防御)
     public static final String KEY_ENABLE_WHATSAPP_CAMERA2_COMPAT = "enable_whatsapp_camera2_compat";
+    public static final String KEY_FACE_FILTER_ENABLED = "face_filter_enabled";
+    public static final String KEY_FACE_FILTER_IMAGE = "face_filter_image";
 
     // Stream media source keys
     public static final String KEY_MEDIA_SOURCE_TYPE = "media_source_type";       // "local" | "stream"
