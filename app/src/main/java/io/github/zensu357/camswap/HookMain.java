@@ -702,26 +702,13 @@ public class HookMain {
         public void run() {
             if (faceFilterEngine == null || faceFilterFeedHandler == null) return;
             if (!getConfig().getBoolean(ConfigManager.KEY_FACE_FILTER_ENABLED, false)) {
-                faceFilterFeedHandler.postDelayed(this, 1000); // slow poll when disabled
+                faceFilterFeedHandler.postDelayed(this, 1000);
                 return;
             }
             try {
-                Bitmap overlay = faceFilterEngine.getOverlayBitmap();
-                if (overlay != null && !overlay.isRecycled()) {
-                    // Feed overlay to all active GL renderers
-                    GLVideoRenderer r = camera2Hook.getActiveRenderer();
-                    if (r != null) r.setOverlayBitmap(Bitmap.createBitmap(overlay));
-                    MediaPlayerManager pm = HookMain.playerManager;
-                    if (pm.c2_renderer != null) pm.c2_renderer.setOverlayBitmap(Bitmap.createBitmap(overlay));
-                    if (pm.c2_renderer_1 != null) pm.c2_renderer_1.setOverlayBitmap(Bitmap.createBitmap(overlay));
-                    if (pm.c2_reader_renderer != null) pm.c2_reader_renderer.setOverlayBitmap(Bitmap.createBitmap(overlay));
-                    if (pm.c2_reader_renderer_1 != null) pm.c2_reader_renderer_1.setOverlayBitmap(Bitmap.createBitmap(overlay));
-                } else {
-                    // Clear overlay when no face
-                    camera2Hook.getActiveRenderer();
-                }
+                faceFilterEngine.getOverlayBitmap();
             } catch (Exception ignored) {}
-            faceFilterFeedHandler.postDelayed(this, 100); // ~10 fps
+            faceFilterFeedHandler.postDelayed(this, 100);
         }
     };
 
