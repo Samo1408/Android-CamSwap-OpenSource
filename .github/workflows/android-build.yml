@@ -1,0 +1,43 @@
+name: Android Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          ndk-version: '25.1.8937393'
+          cmake-version: '3.22.1'
+
+      - name: Build APK
+        run: |
+          cd $GITHUB_WORKSPACE
+          echo "APP_NAME=CamSwapOS FaceFilter" >> $GITHUB_ENV
+          echo "PACKAGE_NAME=io.github.zensu357.camswap" >> $GITHUB_ENV
+          echo "FLUTTER_VER=3.29.1" >> $GITHUB_ENV
+          echo "BUILD_MODE=release" >> $GITHUB_ENV
+          echo "SIGNING_SOURCE=CBE default (cbe_release_key)" >> $GITHUB_ENV
+          ./gradlew assembleRelease
+          echo "## Cloud Build Engine — Build Summary" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: CamSwapOS-FaceFilter
+          path: app/build/outputs/apk/*/*.apk
